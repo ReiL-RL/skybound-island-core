@@ -1,0 +1,13 @@
+# Build output
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+
+# Tools
+.tools/
+
+# Maven
+dependency-reduced-pom.xml

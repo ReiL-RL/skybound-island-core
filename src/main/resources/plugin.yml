@@ -1,0 +1,20 @@
+name: SkyBound-IslandCore
+version: ${project.version}
+main: me.reil.skybound.addon.core.IslandCorePlugin
+api-version: 1.16
+author: Reil
+description: Island Core addon for SkyBound - interactive blocks for depositing items
+depend: [SkyBound, SopLib]
+softdepend: [SopCustomBlocks, SopItemsCreator]
+commands:
+  islandcore:
+    description: Island Core admin commands
+    usage: /islandcore [subcommand]
+    aliases: [icore]
+permissions:
+  islandcore.admin:
+    description: Admin access
+    default: op
+  islandcore.use:
+    description: Use core blocks
+    default: true

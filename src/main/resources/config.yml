@@ -1,0 +1,23 @@
+# SkyBound Island Core - Configuration
+
+# What block to use when SopCustomBlocks is NOT available
+fallback-block: BEACON
+
+# Whether to place core block automatically on island creation (old behavior)
+auto-place-on-create: false
+
+# Whether to give core items to player on island creation
+give-on-create: true
+
+# Which cores to give on island create/regen
+auto-give-on-create:
+  - xp_core
+  - booster_core
+  - upgrade_core
+
+# Particle effect above core blocks
+particles:
+  enabled: true
+  type: END_ROD
+  count: 3
+  interval-ticks: 10

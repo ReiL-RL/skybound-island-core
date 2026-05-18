@@ -1,0 +1,206 @@
+# Core types define what items a core accepts and what it gives
+
+cores:
+  xp_core:
+    display-name: "&a✦ Ядро Опыта"
+    description:
+      - "&7Закинь драгоценные блоки"
+      - "&7чтобы получить XP острова"
+    # SopCustomBlocks block id (if available)
+    custom-block: island_xp_core
+    # GUI title
+    gui-title: "&8✦ Ядро Опыта"
+    gui-size: 27
+    # What items this core accepts and how much XP each gives
+    # Use "sop:<item_id>" for SopItemsCreator items
+    items:
+      DIAMOND:
+        xp: 100
+        display: "&bАлмаз → 100 XP"
+      EMERALD:
+        xp: 75
+        display: "&aИзумруд → 75 XP"
+      GOLD_INGOT:
+        xp: 25
+        display: "&6Золото → 25 XP"
+      IRON_INGOT:
+        xp: 10
+        display: "&fЖелезо → 10 XP"
+      NETHERITE_INGOT:
+        xp: 500
+        display: "&4Незерит → 500 XP"
+      sop:rift_crystal:
+        xp: 500
+        display: "&d✦ Кристалл Разлома → 500 XP"
+      sop:energy_shard:
+        xp: 250
+        display: "&b✦ Осколок Энергии → 250 XP"
+    # Action when items are deposited
+    action: ADD_ISLAND_XP
+
+  booster_core:
+    display-name: "&d✦ Ядро Бустера"
+    description:
+      - "&7Активируй бустер острова"
+      - "&7выбирая нужный эффект"
+    custom-block: island_booster_core
+    gui-title: "&8✦ Ядро Бустера"
+    gui-size: 27
+    action: BOOSTER_SELECTION
+    boosters:
+      xp_boost:
+        display-name: "&a✦ XP Буст"
+        icon: EXPERIENCE_BOTTLE
+        slot: 10
+        description:
+          - "&7x2 XP острова"
+          - "&7Длительность: 30 минут"
+        skybound-booster-id: xp_boost
+        cost:
+          NETHER_STAR: 1
+      generator_boost:
+        display-name: "&e✦ Буст Генератора"
+        icon: FURNACE
+        slot: 12
+        description:
+          - "&7x2 скорость генератора"
+          - "&7Длительность: 30 минут"
+        skybound-booster-id: generator_boost
+        cost:
+          BLAZE_ROD: 2
+      sell_boost:
+        display-name: "&6✦ Буст Продажи"
+        icon: EMERALD
+        slot: 14
+        description:
+          - "&7x1.5 цена продажи в магазине"
+          - "&7Длительность: 30 минут"
+        skybound-booster-id: sell_boost
+        cost:
+          EMERALD: 4
+      luck_boost:
+        display-name: "&b✦ Буст Удачи"
+        icon: DIAMOND
+        slot: 16
+        description:
+          - "&7x2 дроп с мобов"
+          - "&7Длительность: 30 минут"
+        skybound-booster-id: luck_boost
+        cost:
+          NETHERITE_INGOT: 1
+
+  upgrade_core:
+    display-name: "&6✦ Ядро Улучшений"
+    description:
+      - "&7Улучшай свой остров"
+      - "&7выбирая конкретные апгрейды"
+    custom-block: island_upgrade_core
+    gui-title: "&8✦ Ядро Улучшений"
+    gui-size: 27
+    action: UPGRADE_SELECTION
+    upgrades:
+      island_size:
+        display-name: "&aРазмер острова"
+        icon: GRASS_BLOCK
+        slot: 10
+        description:
+          - "&7Увеличивает границы острова"
+          - "&7+10 блоков за уровень"
+        max-level: 10
+        cost-per-level:
+          IRON_INGOT: 16
+          GOLD_INGOT: 8
+        cost-multiplier: 1.5
+        skybound-upgrade-id: island_size
+      mob_limit:
+        display-name: "&cЛимит мобов"
+        icon: SPAWNER
+        slot: 11
+        description:
+          - "&7Увеличивает лимит мобов"
+          - "&7+5 мобов за уровень"
+        max-level: 5
+        cost-per-level:
+          IRON_INGOT: 32
+          DIAMOND: 4
+        cost-multiplier: 2.0
+        skybound-upgrade-id: mob_limit
+      generator_speed:
+        display-name: "&eСкорость генератора"
+        icon: FURNACE
+        slot: 12
+        description:
+          - "&7Ускоряет генератор"
+          - "&7-10% времени за уровень"
+        max-level: 5
+        cost-per-level:
+          GOLD_INGOT: 16
+          DIAMOND: 2
+        cost-multiplier: 1.8
+        skybound-upgrade-id: generator_speed
+      warp_slots:
+        display-name: "&dКоличество варпов"
+        icon: ENDER_PEARL
+        slot: 13
+        description:
+          - "&7Больше точек телепортации"
+          - "&7+1 варп за уровень"
+        max-level: 5
+        cost-per-level:
+          EMERALD: 8
+          ENDER_PEARL: 4
+        cost-multiplier: 1.5
+        skybound-upgrade-id: warp_slots
+      member_limit:
+        display-name: "&bЛимит участников"
+        icon: PLAYER_HEAD
+        slot: 14
+        description:
+          - "&7Больше участников на острове"
+          - "&7+1 слот за уровень"
+        max-level: 5
+        cost-per-level:
+          GOLD_INGOT: 16
+          EMERALD: 8
+        cost-multiplier: 1.5
+        skybound-upgrade-id: member_limit
+      autosell:
+        display-name: "&6Автопродажа"
+        icon: HOPPER
+        slot: 15
+        description:
+          - "&7Разблокирует автопродажу"
+          - "&7Предметы продаются автоматически"
+        max-level: 1
+        cost-per-level:
+          DIAMOND: 16
+          EMERALD: 32
+        cost-multiplier: 1.0
+        skybound-upgrade-id: autosell
+      island_flight:
+        display-name: "&f✦ Полёт (ежедневный)"
+        icon: FEATHER
+        slot: 16
+        description:
+          - "&7Даёт полёт на острове"
+          - "&7Раз в день на 30 минут"
+          - "&7Каждый уровень +10 минут"
+        max-level: 5
+        cost-per-level:
+          GOLD_INGOT: 32
+          DIAMOND: 8
+        cost-multiplier: 1.5
+        skybound-upgrade-id: island_flight
+      island_storage:
+        display-name: "&9Хранилище острова"
+        icon: CHEST
+        slot: 19
+        description:
+          - "&7Увеличивает хранилище"
+          - "&7+9 слотов за уровень"
+        max-level: 5
+        cost-per-level:
+          IRON_INGOT: 32
+          GOLD_INGOT: 16
+        cost-multiplier: 1.5
+        skybound-upgrade-id: island_storage
