@@ -301,6 +301,7 @@ public class CoreListener implements Listener {
      */
     @EventHandler
     public void onIslandCreate(IslandCreateEvent event) {
+        plugin.getLogger().info("IslandCreateEvent received! Player: " + event.getPlayer().getName());
         Island island = event.getIsland();
 
         // Old behavior: auto-place block at center

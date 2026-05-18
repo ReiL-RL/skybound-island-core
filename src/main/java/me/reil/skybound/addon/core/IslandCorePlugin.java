@@ -192,6 +192,27 @@ public class IslandCorePlugin extends JavaPlugin implements SkyBoundAddon {
         return coreGui;
     }
 
+    /**
+     * Called directly by SkyBound Core when island is created (backup for event system).
+     */
+    public void onIslandCreated(org.bukkit.entity.Player player, String islandId) {
+        getLogger().info("onIslandCreated called for " + player.getName());
+        if (!getConfig().getBoolean("give-on-create", true)) return;
+
+        java.util.List<String> autoGive = getConfig().getStringList("auto-give-on-create");
+        int given = 0;
+        for (String typeId : autoGive) {
+            org.bukkit.inventory.ItemStack item = createCoreItem(typeId);
+            if (item != null) {
+                player.getInventory().addItem(item);
+                given++;
+            }
+        }
+        if (given > 0) {
+            player.sendMessage(org.bukkit.ChatColor.GREEN + "✦ Ты получил ядра острова! Поставь их на свой остров.");
+        }
+    }
+
     public UpgradeCoreGui getUpgradeCoreGui() {
         return upgradeCoreGui;
     }
