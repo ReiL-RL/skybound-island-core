@@ -3,14 +3,11 @@
 # What block to use when SopCustomBlocks is NOT available
 fallback-block: BEACON
 
-# Whether to place core block automatically on island creation (old behavior)
-auto-place-on-create: false
+# Whether to place core blocks automatically on island creation
+place-on-create: true
 
-# Whether to give core items to player on island creation
-give-on-create: true
-
-# Which cores to give on island create/regen
-auto-give-on-create:
+# Which cores to place on island create/regen (at center)
+auto-place-on-create:
   - xp_core
   - booster_core
   - upgrade_core

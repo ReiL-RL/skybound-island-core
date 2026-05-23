@@ -6,6 +6,7 @@ import me.reil.skybound.api.SkyBoundAPI;
 import me.reil.skybound.api.addon.SkyBoundAddon;
 import me.reil.skybound.api.addon.AddonRegistry;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -193,23 +194,93 @@ public class IslandCorePlugin extends JavaPlugin implements SkyBoundAddon {
     }
 
     /**
-     * Called directly by SkyBound Core when island is created (backup for event system).
+     * Called directly by SkyBound Core when island is created.
+     * Places cores at island center instead of giving items.
      */
     public void onIslandCreated(org.bukkit.entity.Player player, String islandId) {
-        getLogger().info("onIslandCreated called for " + player.getName());
-        if (!getConfig().getBoolean("give-on-create", true)) return;
+        System.out.println("========================================");
+        System.out.println("ISLAND-CORE: onIslandCreated called!");
+        System.out.println("Player: " + player.getName());
+        System.out.println("islandId: " + islandId);
+        System.out.println("========================================");
+        System.out.flush();
+        
+        try {
+            Thread.sleep(50);
+        } catch (Exception e) {}
 
-        java.util.List<String> autoGive = getConfig().getStringList("auto-give-on-create");
-        int given = 0;
-        for (String typeId : autoGive) {
-            org.bukkit.inventory.ItemStack item = createCoreItem(typeId);
-            if (item != null) {
-                player.getInventory().addItem(item);
-                given++;
-            }
+        // Check if auto-place is enabled
+        boolean placeEnabled = getConfig().getBoolean("place-on-create", true);
+        System.out.println("ISLAND-CORE: place-on-create = " + placeEnabled);
+        System.out.flush();
+        
+        if (!placeEnabled) {
+            System.out.println("ISLAND-CORE: place-on-create is disabled, skipping");
+            System.out.flush();
+            return;
         }
-        if (given > 0) {
-            player.sendMessage(org.bukkit.ChatColor.GREEN + "✦ Ты получил ядра острова! Поставь их на свой остров.");
+
+        // Get location from SkyBound API
+        try {
+            me.reil.skybound.api.island.Island island = SkyBoundAPI.get().getIslandProvider().getIsland(islandId);
+            if (island == null) {
+                System.out.println("ISLAND-CORE: Island not found for ID: " + islandId);
+                System.out.flush();
+                return;
+            }
+
+            org.bukkit.Location center = island.getCenter();
+            if (center == null) {
+                System.out.println("ISLAND-CORE: Center is null for island: " + islandId);
+                System.out.flush();
+                return;
+            }
+
+            System.out.println("ISLAND-CORE: Center location: " + center.getX() + ", " + center.getY() + ", " + center.getZ());
+            System.out.flush();
+
+            // Place cores at center (stacked vertically)
+            java.util.List<String> autoPlaceList = getConfig().getStringList("auto-place-on-create");
+            System.out.println("ISLAND-CORE: Auto-place list: " + autoPlaceList);
+            System.out.flush();
+
+            int yOffset = 0;
+            for (String coreTypeId : autoPlaceList) {
+                CoreType coreType = coreConfig.getCoreType(coreTypeId);
+                if (coreType == null) {
+                    System.out.println("ISLAND-CORE: Core type not found: " + coreTypeId);
+                    System.out.flush();
+                    continue;
+                }
+
+                // Place custom block with vertical offset
+                Location coreLoc = center.clone();
+                coreLoc.setY(center.getBlockY() + yOffset);
+                
+                if (customBlocksBridge.isAvailable() && coreType.getCustomBlockId() != null) {
+                    // Get the item from SopCustomBlocks and place it as a real block
+                    org.bukkit.inventory.ItemStack item = customBlocksBridge.getBlockItem(coreType.getCustomBlockId());
+                    if (item != null && item.getType() != org.bukkit.Material.AIR) {
+                        // Place the block - use the item's material
+                        coreLoc.getBlock().setType(item.getType());
+                        System.out.println("ISLAND-CORE: Placing " + coreTypeId + " (" + item.getType() + ") at " + coreLoc.getBlockX() + "," + coreLoc.getBlockY() + "," + coreLoc.getBlockZ() + ": SUCCESS");
+                        System.out.flush();
+                    } else {
+                        System.out.println("ISLAND-CORE: Failed to get item for " + coreTypeId);
+                        System.out.flush();
+                    }
+                } else {
+                    System.out.println("ISLAND-CORE: No custom block for " + coreTypeId + ", skipping");
+                    System.out.flush();
+                }
+                
+                yOffset++; // Next core will be 1 block higher
+            }
+
+        } catch (Exception e) {
+            System.out.println("ISLAND-CORE: Error placing cores: " + e.getMessage());
+            e.printStackTrace(System.out);
+            System.out.flush();
         }
     }
 

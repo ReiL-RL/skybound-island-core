@@ -2,6 +2,7 @@ package me.reil.skybound.addon.core.integration;
 
 import me.reil.skybound.addon.core.IslandCorePlugin;
 import org.bukkit.Location;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -46,13 +47,20 @@ public class SopCustomBlocksBridge {
         if (!available) return;
 
         try {
-            // SopCustomBlocks API call to place a custom block
-            // net.enelson.sopli.customblocks.SopCustomBlocksAPI.placeBlock(blockId, location)
-            Class<?> apiClass = Class.forName("net.enelson.sopli.customblocks.SopCustomBlocksAPI");
-            java.lang.reflect.Method placeMethod = apiClass.getMethod("placeBlock", String.class, Location.class);
-            placeMethod.invoke(null, blockId, location);
+            // Get SopCustomBlocks plugin instance
+            Plugin customBlocksPlugin = plugin.getServer().getPluginManager().getPlugin("SopCustomBlocks");
+            if (customBlocksPlugin == null) return;
+            
+            // Get blockManager
+            java.lang.reflect.Method getBlockManager = customBlocksPlugin.getClass().getMethod("getBlockManager");
+            Object blockManager = getBlockManager.invoke(customBlocksPlugin);
+            
+            // Call addBlock(id, location, yaw, pitch) - no player needed
+            java.lang.reflect.Method addBlock = blockManager.getClass().getMethod("addBlock", String.class, Location.class, float.class, float.class);
+            addBlock.invoke(blockManager, blockId, location, 0.0f, 0.0f);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to place custom block '" + blockId + "': " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

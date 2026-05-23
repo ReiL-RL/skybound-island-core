@@ -2,6 +2,7 @@ package me.reil.skybound.addon.core;
 
 import me.reil.skybound.api.SkyBoundAPI;
 import me.reil.skybound.api.event.IslandCreateEvent;
+import me.reil.skybound.api.event.IslandDeleteEvent;
 import me.reil.skybound.api.event.IslandRegenEvent;
 import me.reil.skybound.api.island.Island;
 import org.bukkit.ChatColor;
@@ -13,7 +14,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -297,55 +301,41 @@ public class CoreListener implements Listener {
     }
 
     /**
-     * Авто-выдача ядер при создании острова (как предметы в инвентарь).
+     * Авто-выдача ядер при создании острова — ОТКЛЮЧЕНА, используется прямой вызов onIslandCreated().
+     * Оставлен как backup если прямой вызов не работает.
      */
     @EventHandler
     public void onIslandCreate(IslandCreateEvent event) {
-        plugin.getLogger().info("IslandCreateEvent received! Player: " + event.getPlayer().getName());
+        // Disabled — direct call from IslandManager handles this
+        // to avoid double-giving cores
+    }
+
+    /**
+     * Удаление ядер из инвентаря при удалении острова.
+     */
+    @EventHandler
+    public void onIslandDelete(IslandDeleteEvent event) {
         Island island = event.getIsland();
+        if (island == null) return;
+        java.util.UUID ownerUuid = island.getOwner();
+        org.bukkit.entity.Player owner = org.bukkit.Bukkit.getPlayer(ownerUuid);
+        if (owner == null) return;
 
-        // Old behavior: auto-place block at center
-        if (plugin.getConfig().getBoolean("auto-place-on-create", false)) {
-            Location center = island.getCenter();
-            Location coreLoc = center.clone().add(0, 1, 0);
-
-            CoreType xpCore = plugin.getCoreConfig().getCoreType("xp_core");
-            if (xpCore != null) {
-                if (plugin.getCustomBlocksBridge().isAvailable() && xpCore.getCustomBlockId() != null) {
-                    plugin.getCustomBlocksBridge().placeCustomBlock(xpCore.getCustomBlockId(), coreLoc);
-                } else {
-                    String fallbackName = plugin.getConfig().getString("fallback-block", "BEACON");
-                    try {
-                        Material fallback = Material.valueOf(fallbackName);
-                        coreLoc.getBlock().setType(fallback);
-                    } catch (IllegalArgumentException e) {
-                        coreLoc.getBlock().setType(Material.BEACON);
-                    }
+        // Remove core items from inventory
+        org.bukkit.inventory.ItemStack[] contents = owner.getInventory().getContents();
+        for (int i = 0; i < contents.length; i++) {
+            org.bukkit.inventory.ItemStack item = contents[i];
+            if (item == null || !item.hasItemMeta()) continue;
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null || !meta.hasLore()) continue;
+            for (String line : meta.getLore()) {
+                if (ChatColor.stripColor(line).startsWith("core:")) {
+                    owner.getInventory().setItem(i, null);
+                    break;
                 }
-                plugin.getCoreBlockManager().placeCore(coreLoc, "xp_core", island.getId());
-                plugin.getLogger().info("Auto-placed xp_core for island " + island.getId());
-            }
-            return;
-        }
-
-        // New behavior: give core items to player
-        if (!plugin.getConfig().getBoolean("give-on-create", true)) return;
-
-        Player player = event.getPlayer();
-        List<String> autoGive = plugin.getConfig().getStringList("auto-give-on-create");
-
-        int given = 0;
-        for (String typeId : autoGive) {
-            ItemStack item = plugin.createCoreItem(typeId);
-            if (item != null) {
-                player.getInventory().addItem(item);
-                given++;
             }
         }
-
-        if (given > 0) {
-            player.sendMessage(ChatColor.GREEN + "✦ Ты получил ядра острова! Поставь их на свой остров.");
-        }
+        owner.sendMessage(ChatColor.YELLOW + "✦ Ядра острова забраны.");
     }
 
     /**
@@ -421,11 +411,53 @@ public class CoreListener implements Listener {
             islandId = "unknown";
         }
 
-        // Register core
+        // Register core in CoreBlockManager
         plugin.getCoreBlockManager().placeCore(loc, coreTypeId, islandId);
+
+        // Place custom block if SopCustomBlocks is available and custom block ID is defined
+        if (type.getCustomBlockId() != null && plugin.getCustomBlocksBridge().isAvailable()) {
+            plugin.getCustomBlocksBridge().placeCustomBlock(type.getCustomBlockId(), loc);
+        }
 
         String displayName = ChatColor.translateAlternateColorCodes('&', type.getDisplayName());
         player.sendMessage(ChatColor.GREEN + "✦ " + displayName + ChatColor.GREEN + " установлено!");
+    }
+
+    /**
+     * Обработка ломания блока — запрещено.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        Location loc = event.getBlock().getLocation();
+        CoreBlock core = plugin.getCoreBlockManager().getCoreAt(loc);
+
+        if (core == null) return;
+
+        // Cores cannot be broken
+        event.setCancelled(true);
+        event.getPlayer().sendMessage(ChatColor.RED + "✦ Ядро нельзя сломать!");
+    }
+
+    /**
+     * Защита от взрывов (TNT, Creeper и т.д.)
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent event) {
+        event.blockList().removeIf(block -> {
+            CoreBlock core = plugin.getCoreBlockManager().getCoreAt(block.getLocation());
+            return core != null;
+        });
+    }
+
+    /**
+     * Защита от взрывов сущностей (Creeper, TNT и т.д.)
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent event) {
+        event.blockList().removeIf(block -> {
+            CoreBlock core = plugin.getCoreBlockManager().getCoreAt(block.getLocation());
+            return core != null;
+        });
     }
 
     /**

@@ -232,12 +232,24 @@ public class CoreGui {
             player.sendMessage(ChatColor.YELLOW + "✦ Ты не положил подходящих предметов!");
         }
 
-        // Close and cleanup
-        closeGui(player);
+        // Cleanup (keep GUI open)
+        openGuis.remove(playerId);
+        openCoreBlocks.remove(playerId);
     }
 
     /**
-     * Выполняет действие ядра после депозита.
+     * Handles cancel button - returns items but keeps GUI open.
+     */
+    public void handleCancel(Player player, Inventory inventory) {
+        returnDepositItems(player, inventory);
+        // Keep GUI open - just clear state
+        UUID playerId = player.getUniqueId();
+        openGuis.remove(playerId);
+        openCoreBlocks.remove(playerId);
+    }
+
+    /**
+     * Executes the core action after deposit.
      */
     private void executeAction(Player player, CoreType coreType, CoreBlock coreBlock, long totalXp) {
         String action = coreType.getAction();
@@ -314,14 +326,6 @@ public class CoreGui {
         } catch (Exception e) {
             plugin.getLogger().fine("Could not fire achievement event: " + e.getMessage());
         }
-    }
-
-    /**
-     * Обрабатывает отмену — возвращает предметы игроку.
-     */
-    public void handleCancel(Player player, Inventory inventory) {
-        returnDepositItems(player, inventory);
-        closeGui(player);
     }
 
     /**

@@ -286,9 +286,12 @@ public class UpgradeCoreGui {
         // Return excess items
         returnDepositItems(player, inventory);
 
-        // Apply upgrade via SkyBound API
+        // Apply upgrade via SkyBound API (use reflection to call forceUpgrade on implementation)
         try {
-            boolean success = SkyBoundAPI.get().getUpgradeProvider().purchase(player, island, def.getSkyboundUpgradeId());
+            Object upgradeProvider = SkyBoundAPI.get().getUpgradeProvider();
+            java.lang.reflect.Method forceMethod = upgradeProvider.getClass().getMethod("forceUpgrade", me.reil.skybound.api.island.Island.class, String.class);
+            forceMethod.setAccessible(true);
+            boolean success = (boolean) forceMethod.invoke(upgradeProvider, island, def.getSkyboundUpgradeId());
             if (success) {
                 String name = ChatColor.translateAlternateColorCodes('&', def.getDisplayName());
                 player.sendMessage(ChatColor.GREEN + "✦ " + name + ChatColor.GREEN +
@@ -376,9 +379,9 @@ public class UpgradeCoreGui {
     }
 
     private void closeDeposit(Player player) {
+        // Just clear state - don't close inventory
         depositGuis.remove(player.getUniqueId());
         depositCoreBlocks.remove(player.getUniqueId());
-        player.closeInventory();
     }
 
     // --- Utility ---

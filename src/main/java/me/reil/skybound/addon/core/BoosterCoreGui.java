@@ -224,9 +224,12 @@ public class BoosterCoreGui {
         // Return excess items
         returnDepositItems(player, inventory);
 
-        // Activate booster via SkyBound API
+        // Activate booster via SkyBound API (use reflection to call forceActivate on implementation)
         try {
-            boolean success = SkyBoundAPI.get().getBoosterProvider().purchase(player, island, def.getSkyboundBoosterId());
+            Object boosterProvider = SkyBoundAPI.get().getBoosterProvider();
+            java.lang.reflect.Method forceMethod = boosterProvider.getClass().getMethod("forceActivate", me.reil.skybound.api.island.Island.class, String.class);
+            forceMethod.setAccessible(true);
+            boolean success = (boolean) forceMethod.invoke(boosterProvider, island, def.getSkyboundBoosterId());
             if (success) {
                 String name = ChatColor.translateAlternateColorCodes('&', def.getDisplayName());
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "✦ " + name + ChatColor.LIGHT_PURPLE + " активирован!");
@@ -313,9 +316,9 @@ public class BoosterCoreGui {
     }
 
     private void closeDeposit(Player player) {
+        // Just clear state - don't close inventory
         depositGuis.remove(player.getUniqueId());
         depositCoreBlocks.remove(player.getUniqueId());
-        player.closeInventory();
     }
 
     // --- Utility ---
