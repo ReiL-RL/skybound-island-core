@@ -14,6 +14,7 @@ public class SopCustomBlocksBridge {
     private final IslandCorePlugin plugin;
     private boolean available;
     private Object customBlocksApi;
+    private Object customBlocksService;
 
     public SopCustomBlocksBridge(IslandCorePlugin plugin) {
         this.plugin = plugin;
@@ -21,9 +22,16 @@ public class SopCustomBlocksBridge {
 
         if (available) {
             try {
-                // Attempt to get the SopCustomBlocks API
-                customBlocksApi = plugin.getServer().getPluginManager().getPlugin("SopCustomBlocks");
-                plugin.getLogger().info("SopCustomBlocks integration enabled.");
+                // Attempt to get the SopCustomBlocks plugin
+                Plugin customBlocksPlugin = plugin.getServer().getPluginManager().getPlugin("SopCustomBlocks");
+                if (customBlocksPlugin != null) {
+                    // Get the API service
+                    java.lang.reflect.Method getApi = customBlocksPlugin.getClass().getMethod("getApi");
+                    customBlocksService = getApi.invoke(customBlocksPlugin);
+                    plugin.getLogger().info("SopCustomBlocks API integration enabled.");
+                } else {
+                    available = false;
+                }
             } catch (Exception e) {
                 available = false;
                 plugin.getLogger().warning("SopCustomBlocks found but failed to hook: " + e.getMessage());
@@ -44,20 +52,12 @@ public class SopCustomBlocksBridge {
      * Размещает кастомный блок по ID.
      */
     public void placeCustomBlock(String blockId, Location location) {
-        if (!available) return;
+        if (!available || customBlocksService == null) return;
 
         try {
-            // Get SopCustomBlocks plugin instance
-            Plugin customBlocksPlugin = plugin.getServer().getPluginManager().getPlugin("SopCustomBlocks");
-            if (customBlocksPlugin == null) return;
-            
-            // Get blockManager
-            java.lang.reflect.Method getBlockManager = customBlocksPlugin.getClass().getMethod("getBlockManager");
-            Object blockManager = getBlockManager.invoke(customBlocksPlugin);
-            
-            // Call addBlock(id, location, yaw, pitch) - no player needed
-            java.lang.reflect.Method addBlock = blockManager.getClass().getMethod("addBlock", String.class, Location.class, float.class, float.class);
-            addBlock.invoke(blockManager, blockId, location, 0.0f, 0.0f);
+            // Use the new API: placeBlock(id, location)
+            java.lang.reflect.Method placeBlock = customBlocksService.getClass().getMethod("placeBlock", String.class, Location.class);
+            placeBlock.invoke(customBlocksService, blockId, location);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to place custom block '" + blockId + "': " + e.getMessage());
             e.printStackTrace();
@@ -68,12 +68,11 @@ public class SopCustomBlocksBridge {
      * Удаляет кастомный блок.
      */
     public void removeCustomBlock(Location location) {
-        if (!available) return;
+        if (!available || customBlocksService == null) return;
 
         try {
-            Class<?> apiClass = Class.forName("net.enelson.sopli.customblocks.SopCustomBlocksAPI");
-            java.lang.reflect.Method removeMethod = apiClass.getMethod("removeBlock", Location.class);
-            removeMethod.invoke(null, location);
+            java.lang.reflect.Method removeMethod = customBlocksService.getClass().getMethod("removeBlock", Location.class);
+            removeMethod.invoke(customBlocksService, location);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to remove custom block: " + e.getMessage());
         }
@@ -83,12 +82,11 @@ public class SopCustomBlocksBridge {
      * Проверяет, является ли блок кастомным с указанным ID.
      */
     public boolean isCustomBlock(Location location, String blockId) {
-        if (!available) return false;
+        if (!available || customBlocksService == null) return false;
 
         try {
-            Class<?> apiClass = Class.forName("net.enelson.sopli.customblocks.SopCustomBlocksAPI");
-            java.lang.reflect.Method getMethod = apiClass.getMethod("getBlockId", Location.class);
-            Object result = getMethod.invoke(null, location);
+            java.lang.reflect.Method getMethod = customBlocksService.getClass().getMethod("getBlockId", Location.class);
+            Object result = getMethod.invoke(customBlocksService, location);
             return blockId.equals(result);
         } catch (Exception e) {
             return false;
@@ -99,12 +97,11 @@ public class SopCustomBlocksBridge {
      * Получает ItemStack кастомного блока по ID (для выдачи игроку).
      */
     public ItemStack getBlockItem(String blockId) {
-        if (!available) return null;
+        if (!available || customBlocksService == null) return null;
 
         try {
-            Class<?> apiClass = Class.forName("net.enelson.sopli.customblocks.SopCustomBlocksAPI");
-            java.lang.reflect.Method getItemMethod = apiClass.getMethod("getBlockItem", String.class);
-            Object result = getItemMethod.invoke(null, blockId);
+            java.lang.reflect.Method getItemMethod = customBlocksService.getClass().getMethod("getBlockItem", String.class);
+            Object result = getItemMethod.invoke(customBlocksService, blockId);
             return result instanceof ItemStack ? (ItemStack) result : null;
         } catch (Exception e) {
             plugin.getLogger().fine("Failed to get block item for '" + blockId + "': " + e.getMessage());
