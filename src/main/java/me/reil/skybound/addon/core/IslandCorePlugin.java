@@ -244,6 +244,13 @@ public class IslandCorePlugin extends JavaPlugin implements SkyBoundAddon {
             System.out.println("ISLAND-CORE: Auto-place list: " + autoPlaceList);
             System.out.flush();
 
+            // Get integer block coordinates for center
+            int centerX = center.getBlockX();
+            int centerY = center.getBlockY();
+            int centerZ = center.getBlockZ();
+            System.out.println("ISLAND-CORE: Center block coords: " + centerX + ", " + centerY + ", " + centerZ);
+            System.out.flush();
+
             int yOffset = 0;
             for (String coreTypeId : autoPlaceList) {
                 CoreType coreType = coreConfig.getCoreType(coreTypeId);
@@ -253,22 +260,14 @@ public class IslandCorePlugin extends JavaPlugin implements SkyBoundAddon {
                     continue;
                 }
 
-                // Place custom block with vertical offset
-                Location coreLoc = center.clone();
-                coreLoc.setY(center.getBlockY() + yOffset);
+                // Place custom block with vertical offset - use integer coordinates
+                Location coreLoc = new Location(center.getWorld(), centerX, centerY + yOffset, centerZ);
                 
                 if (customBlocksBridge.isAvailable() && coreType.getCustomBlockId() != null) {
-                    // Get the item from SopCustomBlocks and place it as a real block
-                    org.bukkit.inventory.ItemStack item = customBlocksBridge.getBlockItem(coreType.getCustomBlockId());
-                    if (item != null && item.getType() != org.bukkit.Material.AIR) {
-                        // Place the block - use the item's material
-                        coreLoc.getBlock().setType(item.getType());
-                        System.out.println("ISLAND-CORE: Placing " + coreTypeId + " (" + item.getType() + ") at " + coreLoc.getBlockX() + "," + coreLoc.getBlockY() + "," + coreLoc.getBlockZ() + ": SUCCESS");
-                        System.out.flush();
-                    } else {
-                        System.out.println("ISLAND-CORE: Failed to get item for " + coreTypeId);
-                        System.out.flush();
-                    }
+                    // Place the custom block using SopCustomBlocks API
+                    customBlocksBridge.placeCustomBlock(coreType.getCustomBlockId(), coreLoc);
+                    System.out.println("ISLAND-CORE: Placing " + coreTypeId + " at " + coreLoc.getBlockX() + "," + coreLoc.getBlockY() + "," + coreLoc.getBlockZ() + ": SUCCESS");
+                    System.out.flush();
                 } else {
                     System.out.println("ISLAND-CORE: No custom block for " + coreTypeId + ", skipping");
                     System.out.flush();
