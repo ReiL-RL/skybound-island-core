@@ -5,6 +5,8 @@ import me.reil.skybound.addon.core.integration.SopItemsHook;
 import me.reil.skybound.api.SkyBoundAPI;
 import me.reil.skybound.api.addon.SkyBoundAddon;
 import me.reil.skybound.api.addon.AddonRegistry;
+
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -237,6 +239,7 @@ public class IslandCorePlugin extends JavaPlugin implements SkyBoundAddon {
             }
 
             System.out.println("ISLAND-CORE: Center location: " + center.getX() + ", " + center.getY() + ", " + center.getZ());
+            System.out.println("ISLAND-CORE: Center block coords: " + center.getBlockX() + ", " + center.getBlockY() + ", " + center.getBlockZ());
             System.out.flush();
 
             // Place cores at center (stacked vertically)
@@ -265,7 +268,14 @@ public class IslandCorePlugin extends JavaPlugin implements SkyBoundAddon {
                 
                 if (customBlocksBridge.isAvailable() && coreType.getCustomBlockId() != null) {
                     // Place the custom block using SopCustomBlocks API
-                    customBlocksBridge.placeCustomBlock(coreType.getCustomBlockId(), coreLoc);
+                    Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+                    @Override
+                    public void run() {
+                        customBlocksBridge.placeCustomBlock(coreType.getCustomBlockId(), coreLoc);
+                    }
+                    }, 20);
+
+                    
                     System.out.println("ISLAND-CORE: Placing " + coreTypeId + " at " + coreLoc.getBlockX() + "," + coreLoc.getBlockY() + "," + coreLoc.getBlockZ() + ": SUCCESS");
                     System.out.flush();
                 } else {

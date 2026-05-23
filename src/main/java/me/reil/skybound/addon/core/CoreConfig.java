@@ -96,6 +96,7 @@ public class CoreConfig {
             CoreType coreType = new CoreType(key, displayName, description, customBlockId,
                     guiTitle, guiSize, acceptedItems, sopItems, action, boosterId, boosterDuration, command);
             coreTypes.put(key, coreType);
+            plugin.getLogger().info("Loaded core type '" + key + "' with custom-block: " + customBlockId);
         }
 
         plugin.getLogger().info("Loaded " + coreTypes.size() + " core types from cores.yml");
