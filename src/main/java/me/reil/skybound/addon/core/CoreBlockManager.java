@@ -66,6 +66,14 @@ public class CoreBlockManager {
     }
 
     /**
+     * Удаляет все ядра для указанного острова.
+     */
+    public void removeIslandCores(String islandId) {
+        placedCores.entrySet().removeIf(entry -> entry.getValue().getIslandId().equals(islandId));
+        save();
+    }
+
+    /**
      * Загружает данные из cores-data.yml.
      */
     public void load() {

@@ -25,6 +25,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -317,25 +318,30 @@ public class CoreListener implements Listener {
     public void onIslandDelete(IslandDeleteEvent event) {
         Island island = event.getIsland();
         if (island == null) return;
-        java.util.UUID ownerUuid = island.getOwner();
+        String islandId = island.getId();
+        UUID ownerUuid = island.getOwner();
         org.bukkit.entity.Player owner = org.bukkit.Bukkit.getPlayer(ownerUuid);
-        if (owner == null) return;
 
         // Remove core items from inventory
-        org.bukkit.inventory.ItemStack[] contents = owner.getInventory().getContents();
-        for (int i = 0; i < contents.length; i++) {
-            org.bukkit.inventory.ItemStack item = contents[i];
-            if (item == null || !item.hasItemMeta()) continue;
-            ItemMeta meta = item.getItemMeta();
-            if (meta == null || !meta.hasLore()) continue;
-            for (String line : meta.getLore()) {
-                if (ChatColor.stripColor(line).startsWith("core:")) {
-                    owner.getInventory().setItem(i, null);
-                    break;
+        if (owner != null) {
+            org.bukkit.inventory.ItemStack[] contents = owner.getInventory().getContents();
+            for (int i = 0; i < contents.length; i++) {
+                org.bukkit.inventory.ItemStack item = contents[i];
+                if (item == null || !item.hasItemMeta()) continue;
+                ItemMeta meta = item.getItemMeta();
+                if (meta == null || !meta.hasLore()) continue;
+                for (String line : meta.getLore()) {
+                    if (ChatColor.stripColor(line).startsWith("core:")) {
+                        owner.getInventory().setItem(i, null);
+                        break;
+                    }
                 }
             }
+            owner.sendMessage(ChatColor.YELLOW + "✦ Ядра острова забраны.");
         }
-        owner.sendMessage(ChatColor.YELLOW + "✦ Ядра острова забраны.");
+
+        // Remove all custom blocks from the island
+        removeIslandCustomBlocks(islandId);
     }
 
     /**
@@ -360,6 +366,10 @@ public class CoreListener implements Listener {
         if (given > 0) {
             player.sendMessage(ChatColor.GREEN + "✦ Ты получил ядра острова! Поставь их на свой остров.");
         }
+
+        // Remove all custom blocks from the island before regen
+        String islandId = event.getIsland().getId();
+        removeIslandCustomBlocks(islandId);
     }
 
     /**
@@ -469,6 +479,23 @@ public class CoreListener implements Listener {
             return island != null ? island.getId() : null;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    /**
+     * Удаляет все кастомные блоки для указанного острова.
+     */
+    private void removeIslandCustomBlocks(String islandId) {
+        // Get all cores for this island
+        List<CoreBlock> islandCores = plugin.getCoreBlockManager().getIslandCores(islandId);
+        for (CoreBlock core : islandCores) {
+            Location loc = core.getLocation();
+            // Remove from CoreBlockManager
+            plugin.getCoreBlockManager().removeCore(loc);
+            // Remove custom block via SopCustomBlocks
+            if (plugin.getCustomBlocksBridge().isAvailable()) {
+                plugin.getCustomBlocksBridge().removeCustomBlock(loc);
+            }
         }
     }
 }
